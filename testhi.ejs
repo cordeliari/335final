@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionary Lookup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .lookup-section {
+            flex: 1;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #wordBank {
+            flex: 1;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .word-item {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .word-item strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="lookup-section">
+            <h1>Dictionary Lookup</h1>
+            <form id="searchForm">
+                <input type="text" id="wordInput" placeholder="Type a word" />
+                <button type="button" onclick="getDefinition()">Search</button>
+            </form>
+            <div id="output">
+                <p><strong>Definition:</strong> <span id="definition">None</span></p>
+            </div>
+        </div>
+
+        <div id="wordBank">
+            <h2>Word Bank</h2>
+            <!-- Words will be dynamically added here -->
+        </div>
+    </div>
+
+    <script>
+        // Fetch and display word bank when page loads
+        async function loadWordBank() {
+            try {
+                const response = await fetch('/get-words');
+                const words = await response.json();
+                
+                const wordBankElement = document.getElementById('wordBank');
+                // Clear any existing content
+                wordBankElement.innerHTML = '<h2>Word Bank</h2>';
+                
+                // Sort words alphabetically
+                words.sort((a, b) => a.word.localeCompare(b.word));
+                
+                // Create word bank entries
+                words.forEach(item => {
+                    const wordItem = document.createElement('div');
+                    wordItem.classList.add('word-item');
+                    wordItem.innerHTML = `
+                        <strong>${item.word}</strong>
+                        <p>${item.definition}</p>
+                    `;
+                    wordBankElement.appendChild(wordItem);
+                });
+            } catch (error) {
+                console.error('Error loading word bank:', error);
+            }
+        }
+
+        async function getDefinition() {
+            const word = document.getElementById('wordInput').value.trim();
+            const output = document.getElementById('definition');
+            
+            if (!word) {
+                output.textContent = "Please enter a word.";
+                return;
+            }
+
+            try {
+                // Fetch definition first
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+                if (!response.ok) {
+                    throw new Error("Word not found");
+                }
+                
+                const data = await response.json();
+                const definition = data[0].meanings[0].definitions[0].definition;
+                
+                // Log the word and definition to the server
+                const logResponse = await fetch('/log-word', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        word: word,
+                        definition: definition 
+                    })
+                });
+
+                // Update output and reload word bank
+                output.textContent = definition;
+                loadWordBank();
+            } catch (error) {
+                output.textContent = error.message;
+            }
+        }
+
+        // Load word bank when page loads
+        document.addEventListener('DOMContentLoaded', loadWordBank);
+    </script>
+</body>
+</html>
