@@ -2,7 +2,7 @@ const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const path = require('path');
 const app = express();
-const portNumber = 9007;
+const portNumber = process.env.PORT || 9007;
 
 app.set('views', __dirname + '/templates');
 
