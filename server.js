@@ -5,6 +5,7 @@ const app = express();
 const portNumber = process.env.PORT || 9007;
 
 app.set('views', __dirname + '/templates');
+app.set('view engine', 'ejs');
 
 require("dotenv").config();
 const uri = process.env.MONGO_CONNECTION_STRING;
